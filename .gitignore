@@ -1,0 +1,22 @@
+# Copy from xv6-riscv/.gitignore
+*~
+_*
+*.o
+*.d
+*.asm
+*.sym
+*.img
+vectors.S
+bootblock
+entryother
+initcode
+initcode.out
+kernelmemfs
+mkfs
+kernel/kernel
+user/usys.S
+.gdbinit
+TAGS
+
+# Ignore the example code
+xv6-riscv/ 
