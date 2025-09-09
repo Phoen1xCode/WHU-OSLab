@@ -19,4 +19,6 @@ user/usys.S
 TAGS
 
 # Ignore the example code
-xv6-riscv/ 
+xv6-riscv/
+# Ignore the temporary files
+tmp/
