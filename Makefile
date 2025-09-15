@@ -2,9 +2,9 @@ K=kernel
 U=user
 
 OBJS = \
-	$K/entry.o \
-	$K/start.o \ 
-	$K/uart.o
+	$(K)/entry.o \
+	$(K)/start.o \
+	$(K)/uart.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # Try to infer the correct TOOLPREFIX if not set
@@ -25,7 +25,7 @@ endif
 
 CC = $(TOOLPREFIX)gcc
 AS = $(TOOLPREFIX)gas
-LD = $(TOOLPREFIX)ld
+LD = $(TOOLPREFIX)gcc
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 
@@ -33,3 +33,30 @@ QEMU = qemu-system-riscv64
 MIN_QEMU_VERSION = 7.2
 
 
+# Build flags
+RISCV_ARCH = -march=rv64gc -mabi=lp64
+CFLAGS = $(RISCV_ARCH) -ffreestanding -fno-builtin -fno-stack-protector -nostdlib -O2 -g -mcmodel=medany -I$(K)
+ASFLAGS = $(RISCV_ARCH) -ffreestanding -nostdlib -O2 -g -I$(K)
+LDFLAGS = -nostdlib -T $(K)/kernel.ld -Wl,--build-id=none
+
+.PHONY: all clean run
+
+all: $(K)/kernel.elf
+
+$(K)/kernel.elf: $(OBJS) $(K)/kernel.ld
+	$(LD) $(LDFLAGS) -o $@ $(OBJS)
+
+$(K)/entry.o: $(K)/entry.S
+	$(CC) $(ASFLAGS) -c -o $@ $<
+
+$(K)/start.o: $(K)/start.c $(K)/types.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(K)/uart.o: $(K)/uart.c $(K)/memlayout.h $(K)/types.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+	rm -f $(K)/*.o $(K)/kernel.elf
+
+run: all
+	$(QEMU) -machine virt -nographic -bios none -kernel $(K)/kernel.elf
