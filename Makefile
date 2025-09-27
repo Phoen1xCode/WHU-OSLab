@@ -4,7 +4,9 @@ U=user
 OBJS = \
 	$(K)/entry.o \
 	$(K)/start.o \
-	$(K)/uart.o
+	$(K)/uart.o \
+	$(K)/console.o \
+	$(K)/printf.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # Try to infer the correct TOOLPREFIX if not set

@@ -1,12 +1,11 @@
+#include "defs.h"
 #include "types.h"
 
-void uart_puts(char *s);
-
 void start(void) {
-    uart_puts("Hello OS\n");
-    for (;;) {
-        __asm__ volatile ("wfi");
-    }
+  printf("Booting... %d %x %s %c %%\n", 42, 0x2a, "ok", 'A');
+  clear_screen();
+  printf("Screen cleared. Hello OS!\n");
+  for (;;) {
+    __asm__ volatile("wfi");
+  }
 }
-
-
