@@ -2,23 +2,13 @@
 // kernel printf and console output
 //
 
+#include "defs.h"
 #include "types.h"
 #include <stdarg.h>
 
 volatile int panicking = 0; // printing a panic message
 volatile int panicked = 0;  // spinning forever at end of a panic
 
-// Hardware layer
-void uart_putc(char c);
-
-// Console layer
-void console_putc(char c);
-void console_puts(const char *s);
-
-void consputc(char c);
-
-// Formatted layer
-int printf(const char *fmt, ...);
 int sprintf(char *buf, const char *fmt, ...);
 
 static char digits[] = "0123456789abcdef";

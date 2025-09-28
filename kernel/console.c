@@ -51,3 +51,7 @@ int consolewrite(int user_src, uint64 src, int n) {
   }
   return n;
 }
+
+void consoleinit(void) {}
+
+void consoleintr(int c) {}
