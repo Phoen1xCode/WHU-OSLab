@@ -50,8 +50,6 @@ SECTIONS
         PROVIDE(ebss = .);
     }
 
-    PROVIDE(end = .);
-
     /* NOLOAD section for la sp, stack_top */
     . = ALIGN(16);
     __stack_size = 0x4000;
@@ -60,4 +58,6 @@ SECTIONS
         . = . + __stack_size;
         PROVIDE(stack_top = .);
     }
+
+    PROVIDE(end = .);
 } 
