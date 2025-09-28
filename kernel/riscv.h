@@ -256,11 +256,11 @@ typedef uint64 *pagetable_t; // 512 PTEs
 
 #endif // __ASSEMBLER__
 
-#define PGSIZE 4096 // bytes per page
-#define PGSHIFT 12  // bits of offset within a page
+#define PAGESIZE 4096 // bytes per page
+#define PAGESHIFT 12  // bits of offset within a page
 
-#define PGROUNDUP(sz) (((sz) + PGSIZE - 1) & ~(PGSIZE - 1))
-#define PGROUNDDOWN(a) (((a)) & ~(PGSIZE - 1))
+#define PAGEROUNDUP(sz) (((sz) + PAGESIZE - 1) & ~(PAGESIZE - 1))
+#define PAGEROUNDDOWN(a) (((a)) & ~(PAGESIZE - 1))
 
 #define PTE_V (1L << 0) // valid
 #define PTE_R (1L << 1)
@@ -277,7 +277,7 @@ typedef uint64 *pagetable_t; // 512 PTEs
 
 // extract the three 9-bit page table indices from a virtual address.
 #define PXMASK 0x1FF // 9 bits
-#define PXSHIFT(level) (PGSHIFT + (9 * (level)))
+#define PXSHIFT(level) (PAGESHIFT + (9 * (level)))
 #define PX(level, va) ((((uint64)(va)) >> PXSHIFT(level)) & PXMASK)
 
 // one beyond the highest possible virtual address.
