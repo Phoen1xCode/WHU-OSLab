@@ -130,6 +130,15 @@ int printf(const char *fmt, ...) {
   return 0;
 }
 
+void panic(char *s) {
+  panicking = 1;
+  printf("panic: ");
+  printf("%s\n", s);
+  panicked = 1;
+  for (;;)
+    ;
+}
+
 void printfinit(void) {
   // initlock(&pr.lock, "pr");
 }
