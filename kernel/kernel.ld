@@ -25,8 +25,12 @@ SECTIONS
 
         /* Align the current position to the 4096 boundary */
         . = ALIGN(0x1000);
+        
+        /* Provide trampoline symbol for trap handling */
+        PROVIDE(trampoline = .);
+        . = . + 0x1000;
 
-        PROVIDE(etext = .);        
+        PROVIDE(etext = .);
     }
 
     .rodata : {
