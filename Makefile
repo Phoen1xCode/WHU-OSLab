@@ -6,7 +6,12 @@ OBJS = \
 	$(K)/start.o \
 	$(K)/uart.o \
 	$(K)/console.o \
-	$(K)/printf.o
+	$(K)/printf.o \
+	$(K)/string.o \
+	$(K)/kalloc.o \
+	$(K)/kalloc_test.o \
+	$(K)/vm.o \
+	$(K)/vm_test.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # Try to infer the correct TOOLPREFIX if not set
@@ -57,8 +62,29 @@ $(K)/start.o: $(K)/start.c $(K)/types.h
 $(K)/uart.o: $(K)/uart.c $(K)/memlayout.h $(K)/types.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+$(K)/console.o: $(K)/console.c $(K)/defs.h $(K)/types.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(K)/printf.o: $(K)/printf.c $(K)/defs.h $(K)/types.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(K)/string.o: $(K)/string.c $(K)/defs.h $(K)/types.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(K)/kalloc.o: $(K)/kalloc.c $(K)/defs.h $(K)/types.h $(K)/memlayout.h $(K)/riscv.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(K)/kalloc_test.o: $(K)/kalloc_test.c $(K)/defs.h $(K)/types.h $(K)/kalloc.h $(K)/riscv.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(K)/vm.o: $(K)/vm.c $(K)/defs.h $(K)/types.h $(K)/memlayout.h $(K)/riscv.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(K)/vm_test.o: $(K)/vm_test.c $(K)/defs.h $(K)/types.h $(K)/memlayout.h $(K)/riscv.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 clean:
 	rm -f $(K)/*.o $(K)/kernel.elf
 
 run: all
-	$(QEMU) -machine virt -nographic -bios none -kernel $(K)/kernel.elf
+	$(QEMU) -machine virt -bios none -nographic -kernel $(K)/kernel.elf
