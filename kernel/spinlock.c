@@ -34,21 +34,21 @@ void acquire(struct spinlock *lock) {
 }
 
 void release(struct spinlock *lock) {
-    if(!holding(lock))
-        panic("release");
-    
-    lock->cpu = 0;
+  if (!holding(lock))
+    panic("release");
 
-    // Tell the C compiler and the CPU to not move loads or stores
-    // past this point, to ensure that all the stores in the critical
-    // section are visible to other CPUs before the lock is released,
-    // and that loads in the critical section occur strictly before
-    // the lock is released.
-    // On RISC-V, this emits a fence instruction.
-    __sync_synchronize();
+  lock->cpu = 0;
 
-    lock->locked = 0; // 释放锁
-    pop_off(); // 恢复中断
+  // Tell the C compiler and the CPU to not move loads or stores
+  // past this point, to ensure that all the stores in the critical
+  // section are visible to other CPUs before the lock is released,
+  // and that loads in the critical section occur strictly before
+  // the lock is released.
+  // On RISC-V, this emits a fence instruction.
+  __sync_synchronize();
+
+  lock->locked = 0; // 释放锁
+  pop_off();        // 恢复中断
 }
 
 // Check whether this cpu is holding the lock.
