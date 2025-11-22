@@ -5,7 +5,6 @@
 #include "param.h"
 #include "proc.h"
 #include "riscv.h"
-#include "types.h"
 
 void initlock(struct spinlock *lock, char *name) {
   lock->name = name;
