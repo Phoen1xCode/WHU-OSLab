@@ -4,11 +4,15 @@
 #include <stdarg.h>
 
 #include "defs.h"
+#include "spinlock.h"
 #include "types.h"
 
 #define BACKSPACE 0x100
 #define C(x) ((x) - '@') // Control-x
 
+// send one character to the uart.
+// called by printf(), and to echo input characters,
+// but not from write().
 void consputc(int c) {
   if (c == BACKSPACE) {
     // if user typed backspace, overwrite with a space.
@@ -31,6 +35,7 @@ void consputs(const char *s) {
 void clear_screen(void) { consputs("\033[2J\033[H"); }
 
 struct {
+  struct spinlock lock;
 // input
 #define INPUT_BUF_SIZE 128
   char buf[INPUT_BUF_SIZE];
@@ -39,7 +44,6 @@ struct {
   uint e; // Edit index
 } console;
 
-//
 // user write()s to the console go here.
 // Can't understand this function
 int consolewrite(int user_src, uint64 src, int n) {
@@ -52,6 +56,7 @@ int consolewrite(int user_src, uint64 src, int n) {
   return n;
 }
 
-void consoleinit(void) {}
-
-void consoleintr(int c) {}
+void consoleinit(void) {
+  initlock(&console.lock, "console");
+  uartinit();
+}

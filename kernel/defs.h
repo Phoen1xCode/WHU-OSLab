@@ -1,18 +1,23 @@
 #include "types.h"
+#include <stdio.h>
 
 struct context;
 struct spinlock;
 
 // console.c
+void consoleinit(void);
 void consputc(int c);
 void consputs(const char *s);
 void clear_screen(void);
 
+
 // printf.c
+void printfinit(void);
 int printf(const char *fmt, ...);
 void panic(char *) __attribute__((noreturn));
 
 // uart.c
+void uartinit(void);
 void uartputc(char c);
 void uartputs(const char *s);
 

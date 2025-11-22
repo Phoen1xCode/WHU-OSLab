@@ -1,15 +1,20 @@
 //
 // kernel printf and console output
 //
+#include <stdarg.h>
 
 #include "defs.h"
+#include "spinlock.h"
 #include "types.h"
-#include <stdarg.h>
 
 volatile int panicking = 0; // printing a panic message
 volatile int panicked = 0;  // spinning forever at end of a panic
 
-int sprintf(char *buf, const char *fmt, ...);
+
+static struct {
+  struct spinlock lock;
+} pr;
+
 
 static char digits[] = "0123456789abcdef";
 
@@ -140,7 +145,7 @@ void panic(char *s) {
 }
 
 void printfinit(void) {
-  // initlock(&pr.lock, "pr");
+  initlock(&pr.lock, "pr");
 }
 
 // Test functions

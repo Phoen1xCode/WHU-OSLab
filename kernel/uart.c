@@ -4,7 +4,7 @@
 
 #include "defs.h"
 #include "memlayout.h"
-#include "types.h"
+#include "spinlock.h"
 
 // the UART control registers are memory-mapped
 // at address UART0. this macro returns the
@@ -28,11 +28,15 @@
 #define LSR_RX_READY (1 << 0)   // input is waitting to be read from RHR
 #define LSR_TX_IDLE (1 << 5)    // THR can accept another character to send
 
+static struct {
+  struct spinlock lock;
+} uart;
+
 void uartinit(void) {
   // disable interrupts.
   WriteReg(IER, 0x00);
 
-  //
+  initlock(&uart.lock, "uart");
 }
 
 void uartwrite(char buf[], int n);
