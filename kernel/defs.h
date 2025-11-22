@@ -32,11 +32,11 @@ int             strncmp(const char*, const char*, uint);
 char*           strncpy(char*, const char*, int);
 
 // kalloc.c
+void kinit(void);
 void* kalloc(void);
 void* kalloc_internal(const char*, int);
 void kfree(void*);
 void kfree_internal(void*, const char*, int);
-void kinit(void);
 void freerange(void*, void*);
 int kref(void*);
 void kmem_stats(void);
