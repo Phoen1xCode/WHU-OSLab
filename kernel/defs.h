@@ -1,8 +1,7 @@
 #include "types.h"
 
-// Forward type declarations
-typedef uint64 pte_t;
-typedef uint64 *pagetable_t;
+struct context;
+struct spinlock;
 
 // console.c
 void consputc(int c);
@@ -62,3 +61,36 @@ void uvmfree(pagetable_t, uint64);
 void proc_mapstacks(pagetable_t);
 int ismapped(pagetable_t, uint64);
 uint64 vmfault(pagetable_t, uint64, uint64);
+
+// trap.c
+void trapinit(void);
+void trapinithart(void);
+uint64 usertrap(void);
+void usertrapret(void);
+void kerneltrap(void);
+void clockintr(void);
+int devintr(void);
+uint64 get_ticks(void);
+
+
+// spinlock.c
+void initlock(struct spinlock *, char *);
+int holding(struct spinlock *);
+void push_off(void);
+void pop_off(void);
+
+// proc.c
+int cpuid(void);
+struct cpu* mycpu(void);
+struct proc* myproc(void);
+
+
+// spinlock.c
+void initlock(struct spinlock *, char *);
+void acquire(struct spinlock *);
+void release(struct spinlock *);
+int holding(struct spinlock *);
+void push_off(void);
+void pop_off(void);
+
+
