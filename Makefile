@@ -9,9 +9,14 @@ OBJS = \
 	$(K)/printf.o \
 	$(K)/string.o \
 	$(K)/kalloc.o \
-	$(K)/kalloc_test.o \
 	$(K)/vm.o \
-	$(K)/vm_test.o
+	$(K)/trap.o \
+	$(K)/trampoline.o \
+	$(K)/kernelvector.o \
+	$(K)/plic.o \
+	$(K)/spinlock.o \
+	$(K)/proc.o \
+	$(K)/main.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # Try to infer the correct TOOLPREFIX if not set

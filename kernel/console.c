@@ -56,6 +56,50 @@ int consolewrite(int user_src, uint64 src, int n) {
   return n;
 }
 
+void consoleintr(int c) {
+  acquire(&console.lock);
+
+  switch (c) {
+  case C('P'): // Print process list.
+    // procdump();
+    break;
+  case C('U'): // Kill line.
+    while (console.e != console.w &&
+           console.buf[(console.e - 1) % INPUT_BUF_SIZE] != '\n') {
+      console.e--;
+      consputc(BACKSPACE);
+    }
+    break;
+  case C('H'): // Backspace
+  case '\x7f': // Delete key
+    if (console.e != console.w) {
+      console.e--;
+      consputc(BACKSPACE);
+    }
+    break;
+  default:
+    if (c != 0 && console.e - console.r < INPUT_BUF_SIZE) {
+      c = (c == '\r') ? '\n' : c;
+
+      // echo back to the user.
+      consputc(c);
+
+      // store for consumption by consoleread().
+      console.buf[console.e++ % INPUT_BUF_SIZE] = c;
+
+      if (c == '\n' || c == C('D') || console.e - console.r == INPUT_BUF_SIZE) {
+        // wake up consoleread() if a whole line (or end-of-file)
+        // has arrived.
+        console.w = console.e;
+        // wakeup(&console.r);
+      }
+    }
+    break;
+  }
+
+  release(&console.lock);
+}
+
 void consoleinit(void) {
   initlock(&console.lock, "console");
   uartinit();

@@ -1,5 +1,4 @@
 #include "types.h"
-#include <stdio.h>
 
 struct context;
 struct spinlock;
@@ -8,6 +7,7 @@ struct spinlock;
 void consoleinit(void);
 void consputc(int c);
 void consputs(const char *s);
+void consoleintr(int c);
 void clear_screen(void);
 
 
@@ -20,6 +20,7 @@ void panic(char *) __attribute__((noreturn));
 void uartinit(void);
 void uartputc(char c);
 void uartputs(const char *s);
+void uartintr(void);
 
 
 // string.c
@@ -98,4 +99,11 @@ int holding(struct spinlock *);
 void push_off(void);
 void pop_off(void);
 
+// plic.c
+void            plicinit(void);
+void            plicinithart(void);
+int             plic_claim(void);
+void            plic_complete(int);
 
+// number of elements in fixed-size array
+#define NELEM(x) (sizeof(x)/sizeof((x)[0]))

@@ -11,7 +11,7 @@ int main() {
   printf("=====================================\n");
   printf("  WHU-OSLab xv6 kernel is booting...\n");
   printf("=====================================\n");
-  printf("  Hart ID: %lu\n", r_mhartid());
+  printf("  Hart ID: %d\n", cpuid());
   printf("=====================================\n\n");
 
   // 初始化内存管理
@@ -24,7 +24,13 @@ int main() {
 
   // 初始化进程和中断
   // procinit();
-  // trapinit();
+  trapinit();
+  trapinithart();
+  plicinit();
+  plicinithart();
+
+  printf("[INIT] Enabling interrupts...\n");
+  intr_on();
 
   // 初始化文件系统和设备
 
@@ -33,4 +39,7 @@ int main() {
 
   // 进入调度器循环
   // scheduler();
+
+  while (1) {
+  }
 }

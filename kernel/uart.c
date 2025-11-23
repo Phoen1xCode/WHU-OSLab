@@ -30,6 +30,8 @@
 
 static struct {
   struct spinlock lock;
+  int tx_busy; // is the UART busy sending?
+  int tx_chan; // &tx_chan is the "wait channel"
 } uart;
 
 void uartinit(void) {
@@ -67,4 +69,22 @@ int uartgetc(void) {
   }
 }
 
-void uartintr(void);
+void uartintr(void) {
+  ReadReg(ISR); // acknowledge the interrupt
+
+  acquire(&uart.lock);
+  if (ReadReg(ISR) & IER_TX_ENABLE) {
+    // transmit interrupt
+    uart.tx_busy = 0;
+    // wakeup(&uart.tx_chan);
+  }
+  release(&uart.lock);
+
+  // read and process incoming characters
+  while(1) {
+    int c = uartgetc();
+    if (c == -1)
+      break;
+    consoleintr(c);
+  }
+}
