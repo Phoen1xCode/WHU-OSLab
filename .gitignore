@@ -18,8 +18,6 @@ user/usys.S
 .gdbinit
 TAGS
 
-# Ignore the example code
-xv6-riscv
 # Ignore the temporary files
 docs
 tmp
