@@ -33,13 +33,13 @@ int main() {
   // printf("[INIT] Enabling interrupts...\n");
   // intr_on();
 
-  // 初始化文件系统和设备
+  // // 初始化文件系统和设备
 
-  printf("[INIT] create first user process\n");
-  // 创建用户进程
+  // printf("[INIT] create first user process\n");
+  // // 创建用户进程
   // userinit(); // first user process
 
-  // Create a kernel thread to run tests
+  // // Create a kernel thread to run tests
   kthread_create(test_main);
 
   // 进入调度器循环
@@ -47,6 +47,6 @@ int main() {
 
   // test_main();
 
-  while (1) {
-  }
+  // while (1) {
+  // }
 }

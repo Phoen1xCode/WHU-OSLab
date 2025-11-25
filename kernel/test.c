@@ -1,9 +1,9 @@
 #include "defs.h"
-#include "riscv.h"
-#include "types.h"
 #include "param.h"
-#include "spinlock.h"
 #include "proc.h"
+#include "riscv.h"
+#include "spinlock.h"
+#include "types.h"
 
 // Global variables for testing
 volatile int test_timer_flag = 0;
@@ -69,9 +69,9 @@ void test_interrupt_overhead(void) {
 
 // --- Process Tests ---
 
-// Mock function to simulate process creation since we don't have a user-space loader for arbitrary functions yet.
-// In a real scenario, we would use fork() and exec().
-// Here we will use fork() and have the child execute the task.
+// Mock function to simulate process creation since we don't have a user-space
+// loader for arbitrary functions yet. In a real scenario, we would use fork()
+// and exec(). Here we will use fork() and have the child execute the task.
 
 void simple_task() {
   printf("  [PID %d] Simple task running...\n", myproc()->pid);
@@ -90,13 +90,9 @@ void cpu_intensive_task() {
 }
 
 // Helper to create a kernel process (simulated via fork)
-int create_process(void (*func)()) {
-  return kthread_create(func);
-}
+int create_process(void (*func)()) { return kthread_create(func); }
 
-void wait_process(int *status) {
-  wait(0);
-}
+void wait_process(int *status) { wait(0); }
 
 void test_process_creation(void) {
   printf("Testing process creation...\n");
@@ -104,10 +100,10 @@ void test_process_creation(void) {
   // 测试基本的进程创建
   int pid = create_process(simple_task);
   if (pid > 0) {
-      printf("Created process with PID %d\n", pid);
-      wait_process(0);
+    printf("Created process with PID %d\n", pid);
+    wait_process(0);
   } else {
-      printf("Failed to create process\n");
+    printf("Failed to create process\n");
   }
 
   // 测试进程表限制
@@ -141,20 +137,22 @@ void test_scheduler(void) {
 
   // 观察调度行为
   uint64 start_time = get_time();
-  // sleep(1000); // 等待1秒 - sleep takes a lock, we can just busy wait or yield
-  
+  // sleep(1000); // 等待1秒 - sleep takes a lock, we can just busy wait or
+  // yield
+
   // Let the scheduler run for a bit
   uint64 start_ticks = get_ticks();
-  while(get_ticks() < start_ticks + 10) {
-      yield();
+  while (get_ticks() < start_ticks + 10) {
+    yield();
   }
 
   uint64 end_time = get_time();
 
   printf("Scheduler test completed in %lu cycles\n", end_time - start_time);
-  
+
   // Wait for children
-  for(int i=0; i<3; i++) wait(0);
+  for (int i = 0; i < 3; i++)
+    wait(0);
 }
 
 // Synchronization Test
@@ -208,6 +206,8 @@ void consumer_task() {
 void test_synchronization(void) {
   printf("Testing synchronization...\n");
   // 测试生产者-消费者场景
+  // 生产者先填满 10 个槽位，随后消费者依次取出
+  // 再循环第二批，最终双方各执行 20 次并退出
   shared_buffer_init();
 
   create_process(producer_task);
@@ -222,7 +222,7 @@ void test_synchronization(void) {
 
 void test_main(void) {
   printf("\n=== Starting Kernel Tests ===\n");
-  
+
   // Interrupt tests
   // test_timer_interrupt();
   // test_exception_handling();
@@ -234,7 +234,8 @@ void test_main(void) {
   test_synchronization();
 
   printf("=== All Tests Completed ===\n\n");
-  
+
   // Halt
-  for(;;) asm volatile("wfi");
+  for (;;)
+    asm volatile("wfi");
 }
