@@ -211,12 +211,15 @@ static inline uint64 r_time() {
 }
 
 // enable device interrupts
+// 开启设备终端
 static inline void intr_on() { w_sstatus(r_sstatus() | SSTATUS_SIE); }
 
 // disable device interrupts
+// 关闭设备终端
 static inline void intr_off() { w_sstatus(r_sstatus() & ~SSTATUS_SIE); }
 
 // are device interrupts enabled?
+// 检测设备终端是否开启
 static inline int intr_get() {
   uint64 x = r_sstatus();
   return (x & SSTATUS_SIE) != 0;
