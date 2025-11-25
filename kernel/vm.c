@@ -2,6 +2,7 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "types.h"
+#include "param.h"
 
 // Forward declarations
 void kvmmap(pagetable_t, uint64, uint64, uint64, int);
@@ -414,11 +415,17 @@ void uvmfree(pagetable_t pagetable, uint64 sz) {
   freewalk(pagetable);
 }
 
-// Placeholder for proc_mapstacks
-// This function should be implemented when process management is added
+// Allocate a page for each process's kernel stack.
+// Map it high in memory, followed by an invalid
+// guard page.
 void proc_mapstacks(pagetable_t kpgtbl) {
-  // TODO: Implement when process structure is defined
-  // This will map kernel stacks for each process
+  for (int i = 0; i < NPROC; i++) {
+    char *pa = kalloc();
+    if (pa == 0)
+      panic("kalloc");
+    uint64 va = KSTACK(i);
+    kvmmap(kpgtbl, va, (uint64)pa, PAGESIZE, PTE_R | PTE_W);
+  }
 }
 
 

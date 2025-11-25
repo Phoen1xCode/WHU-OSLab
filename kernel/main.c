@@ -2,6 +2,7 @@
 #include "memlayout.h"
 #include "param.h"
 #include "riscv.h"
+extern void test_main(void);
 
 int main() {
   // 初始化控制台和打印系统
@@ -23,22 +24,28 @@ int main() {
   kvminithart(); // turn on paging
 
   // 初始化进程和中断
-  // procinit();
+  procinit();
   trapinit();
   trapinithart();
   plicinit();
   plicinithart();
 
-  printf("[INIT] Enabling interrupts...\n");
-  intr_on();
+  // printf("[INIT] Enabling interrupts...\n");
+  // intr_on();
 
   // 初始化文件系统和设备
 
+  printf("[INIT] create first user process\n");
   // 创建用户进程
   // userinit(); // first user process
 
+  // Create a kernel thread to run tests
+  kthread_create(test_main);
+
   // 进入调度器循环
-  // scheduler();
+  scheduler();
+
+  // test_main();
 
   while (1) {
   }

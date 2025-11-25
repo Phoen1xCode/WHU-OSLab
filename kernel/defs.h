@@ -89,6 +89,24 @@ void pop_off(void);
 int cpuid(void);
 struct cpu* mycpu(void);
 struct proc* myproc(void);
+void procinit(void);
+void userinit(void);
+int growproc(int);
+void forkret(void);
+void sleep(void*, struct spinlock*);
+void wakeup(void*);
+void yield(void);
+void exit(int);
+int fork(void);
+int kthread_create(void (*func)());
+int wait(uint64);
+void scheduler(void) __attribute__((noreturn));
+void sched(void);
+void setkilled(struct proc*);
+int killed(struct proc*);
+
+// swtch.S
+void swtch(struct context*, struct context*);
 
 
 // spinlock.c

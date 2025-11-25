@@ -27,7 +27,12 @@ struct spinlock tickslock;
 // 全局时钟滴答计数器
 uint ticks;
 
+// Test variables
+int test_mode = 0;
+uint64 interrupt_cycles = 0;
+
 extern char trampoline[], uservector[];
+extern char userret[];
 
 // in kernelvector.S, calls kerneltrap().
 void kernelvector();
@@ -81,6 +86,8 @@ uint64 usertrap(void) {
 
     // 调用系统调用处理程序
     // syscall(); // 暂未实现
+    printf("System call from user mode!\n");
+    p->trapframe->a0 = 0; // return 0
 
   } else if ((which_dev = devintr()) != 0) {
     // 设备中断，已经被 devintr() 处理
@@ -109,15 +116,14 @@ uint64 usertrap(void) {
   }
 
   // 如果是时钟中断，让出 CPU
-  // if (which_dev == 2)
-  //   yield();  // 需要实现进程调度
+  if (which_dev == 2)
+    yield();
 
   // 准备返回用户空间
   usertrapret();
 
   // 返回用户页表（这里需要根据你的进程管理实现）
-  // return MAKE_SATP(current_process->pagetable);
-  return 0; // 临时返回值
+  return 0; // usertrapret sets satp
 }
 
 //
@@ -125,6 +131,8 @@ uint64 usertrap(void) {
 // 设置 trapframe 和控制寄存器
 //
 void usertrapret(void) {
+  struct proc *p = myproc();
+
   // 关闭中断，因为我们要切换陷阱向量
   // 如果在切换过程中发生中断会很危险
   intr_off();
@@ -134,12 +142,10 @@ void usertrapret(void) {
   w_stvec(trampoline_uservec);
 
   // 设置 trapframe 的值，供下次陷入内核时使用
-  // 这里需要根据你的进程管理实现来填充
-  // struct proc *p = myproc();
-  // p->trapframe->kernel_satp = r_satp();
-  // p->trapframe->kernel_sp = p->kstack + PAGESIZE;
-  // p->trapframe->kernel_trap = (uint64)usertrap;
-  // p->trapframe->kernel_hartid = 0;  // 单核系统
+  p->trapframe->kernel_satp = r_satp();         // kernel page table
+  p->trapframe->kernel_sp = p->kstack + PAGESIZE; // process's kernel stack
+  p->trapframe->kernel_trap = (uint64)usertrap;
+  p->trapframe->kernel_hartid = r_tp();         // hartid for cpuid()
 
   // 设置 sstatus 寄存器，准备返回用户模式
   uint64 x = r_sstatus();
@@ -148,10 +154,21 @@ void usertrapret(void) {
   w_sstatus(x);
 
   // 设置返回地址（保存的用户 PC）
-  // w_sepc(p->trapframe->epc);
+  w_sepc(p->trapframe->epc);
+
+  // tell trampoline.S the user page table to switch to.
+  uint64 satp = MAKE_SATP(p->pagetable);
+
+  // jump to userret in trampoline.S at the top of memory, which
+  // switches to the user page table, restores user registers,
+  // and switches to user mode with sret.
+  uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline);
+  ((void (*)(uint64, uint64))trampoline_userret)(satp, TRAMPOLINE + (userret - trampoline) - PAGESIZE);
 }
 
 // 处理来自内核代码的中断和异常
+// 内核态的中断为设备中断，时钟中断和外设中断
+// 内核代码的异常通常是严重错误，直接调用panic()
 // 通过 kernelvec 调用，使用当前的内核栈
 void kerneltrap(void) {
   int which_dev = 0;
@@ -171,14 +188,26 @@ void kerneltrap(void) {
   which_dev = devintr();
   // 处理设备中断
   if (which_dev == 0) {
+    if (test_mode) {
+      // In test mode, recover from exceptions
+      // Advance sepc to skip the faulting instruction
+      // Assuming 4-byte instruction for simplicity (standard RISC-V)
+      // For compressed instructions (2-byte), we would need to check the
+      // instruction
+      printf("Caught expected exception (scause=0x%lx)\n", scause);
+      w_sepc(sepc + 4);
+      w_sstatus(sstatus);
+      return;
+    }
+
     // 未知的中断或陷阱
     printf("scause=0x%lx sepc=0x%lx stval=0x%lx\n", scause, sepc, r_stval());
     panic("kerneltrap");
   }
 
   // 如果是时钟中断，可能需要让出 CPU
-  if (which_dev == 2 && myproc() != 0) {
-    //   yield();
+  if (which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING) {
+    yield();
   }
 
   // 恢复 sepc 和 sstatus，因为 yield() 可能改变了它们
@@ -189,17 +218,21 @@ void kerneltrap(void) {
 // 时钟中断处理程序
 // 更新全局时钟计数器并设置下一次中断
 void clockintr(void) {
+  uint64 start = r_time();
+
   acquire(&tickslock);
   // 增加时钟滴答计数
   ticks++;
   printf("Timer interrupt: %d\n", ticks);
 
   // 唤醒等待时钟的进程
-  // wakeup(&ticks);
+  wakeup(&ticks);
   release(&tickslock);
 
   // 设置下一次时钟中断
   w_stimecmp(r_time() + 1000000);
+
+  interrupt_cycles += (r_time() - start);
 }
 
 // 检查并处理设备中断
@@ -234,4 +267,12 @@ int devintr(void) {
   } else {
     return 0; // 无法识别的中断
   }
+}
+
+uint64 get_ticks(void) {
+  uint t;
+  acquire(&tickslock);
+  t = ticks;
+  release(&tickslock);
+  return t;
 }

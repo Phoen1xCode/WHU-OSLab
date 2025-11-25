@@ -23,6 +23,7 @@ void start(void) {
   // 将所有中断和异常委托给 S-Mode 处理
   w_medeleg(0xffff);                    // 委托所有异常
   w_mideleg(0xffff);                    // 委托所有中断
+  
   w_sie(r_sie() | SIE_SEIE | SIE_STIE); // 启用 S-Mode 的外部和时钟中断
 
   // 配置 PMP (Physical Memory Protection) 允许 S-mode 访问所有物理内存
