@@ -30,23 +30,17 @@ int main() {
   plicinit();
   plicinithart();
 
-  // printf("[INIT] Enabling interrupts...\n");
-  // intr_on();
-
   // // 初始化文件系统和设备
 
   // printf("[INIT] create first user process\n");
   // // 创建用户进程
   // userinit(); // first user process
 
-  // // Create a kernel thread to run tests
+  // 创建内核线程运行测试（包括新的 sys_hello 系统调用测试）
+  printf("[INIT] creating test thread...\n");
   kthread_create(test_main);
 
   // 进入调度器循环
+  printf("[INIT] starting scheduler...\n");
   scheduler();
-
-  // test_main();
-
-  // while (1) {
-  // }
 }

@@ -2,6 +2,7 @@
 
 struct context;
 struct spinlock;
+struct proc;
 
 // console.c
 void consoleinit(void);
@@ -78,6 +79,17 @@ void clockintr(void);
 int devintr(void);
 uint64 get_ticks(void);
 
+// syscall.c
+void syscall(void);
+void argint(int, int*);
+void argaddr(int, uint64*);
+int fetchaddr(uint64, uint64*);
+int fetchstr(uint64, char*, int);
+int argstr(int, char*, int);
+
+// sysproc.c
+int kill(int);
+
 
 // spinlock.c
 void initlock(struct spinlock *, char *);
@@ -122,6 +134,9 @@ void            plicinit(void);
 void            plicinithart(void);
 int             plic_claim(void);
 void            plic_complete(int);
+
+// test.c
+void test_main(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

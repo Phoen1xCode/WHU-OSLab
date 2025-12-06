@@ -77,6 +77,10 @@ uint64 usertrap(void) {
   if (scause == 8) {
     // system call
 
+    // 如果进程已被杀死，直接退出
+    if (killed(p))
+      exit(-1);
+
     // sepc 指向 ecall 指令，但我们想返回到下一条指令
     p->trapframe->epc += 4;
 
@@ -84,10 +88,8 @@ uint64 usertrap(void) {
     // 因为我们已经处理完了 sepc、scause 和 sstatus
     intr_on();
 
-    // 调用系统调用处理程序
-    // syscall(); // 暂未实现
-    printf("System call from user mode!\n");
-    p->trapframe->a0 = 0; // return 0
+    // 调用系统调用分发程序
+    syscall();
 
   } else if ((which_dev = devintr()) != 0) {
     // 设备中断，已经被 devintr() 处理
