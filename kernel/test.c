@@ -1,8 +1,8 @@
 #include "defs.h"
 #include "param.h"
-#include "proc.h"
+#include "proc/proc.h"
 #include "riscv.h"
-#include "spinlock.h"
+#include "sync/spinlock.h"
 #include "types.h"
 
 // 声明 sys_hello 系统调用函数（在 sysproc.c 中实现）

@@ -1,7 +1,8 @@
-#include "defs.h"
-#include "memlayout.h"
-#include "param.h"
-#include "riscv.h"
+#include "include/defs.h"
+#include "include/memlayout.h"
+#include "include/param.h"
+#include "include/riscv.h"
+
 extern void test_main(void);
 
 int main() {
@@ -24,13 +25,24 @@ int main() {
   kvminithart(); // turn on paging
 
   // 初始化进程和中断
+  printf("[INIT] Initializing process management...\n");
   procinit();
   trapinit();
   trapinithart();
   plicinit();
   plicinithart();
 
-  // // 初始化文件系统和设备
+  // 初始化文件系统和设备
+  printf("[INIT] Initializing block cache...\n");
+  binit(); // buffer cache
+  printf("[INIT] Initializing inode table...\n");
+  iinit(); // inode table
+  printf("[INIT] Initializing file table...\n");
+  fileinit(); // file table
+  printf("[INIT] Initializing virtio disk...\n");
+  virtio_disk_init(); // emulated hard disk
+  printf("[INIT] Initializing file system...\n");
+  fsinit(ROOTDEV); // file system
 
   // printf("[INIT] create first user process\n");
   // // 创建用户进程
@@ -38,7 +50,7 @@ int main() {
 
   // 创建内核线程运行测试（包括新的 sys_hello 系统调用测试）
   printf("[INIT] creating test thread...\n");
-  kthread_create(test_main);
+  // kthread_create(test_main);
 
   // 进入调度器循环
   printf("[INIT] starting scheduler...\n");
