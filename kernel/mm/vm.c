@@ -1,8 +1,9 @@
-#include "defs.h"
-#include "memlayout.h"
-#include "riscv.h"
-#include "types.h"
-#include "param.h"
+#include "../include/defs.h"
+#include "../include/memlayout.h"
+#include "../include/param.h"
+#include "../include/riscv.h"
+#include "../include/types.h"
+#include "../proc/proc.h"
 
 // Forward declarations
 void kvmmap(pagetable_t, uint64, uint64, uint64, int);
@@ -206,8 +207,8 @@ uint64 uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm) {
       return 0;
     }
     memset(mem, 0, PAGESIZE);
-    if (mappages(pagetable, a, PAGESIZE, (uint64)mem,
-                 PTE_R | PTE_U | xperm) != 0) {
+    if (mappages(pagetable, a, PAGESIZE, (uint64)mem, PTE_R | PTE_U | xperm) !=
+        0) {
       kfree(mem);
       uvmdealloc(pagetable, a, oldsz);
       return 0;
@@ -428,7 +429,6 @@ void proc_mapstacks(pagetable_t kpgtbl) {
   }
 }
 
-
 // Check if a virtual address is mapped in the page table
 int ismapped(pagetable_t pagetable, uint64 va) {
   pte_t *pte = walk(pagetable, va, 0);
@@ -453,27 +453,53 @@ uint64 vmfault(pagetable_t pagetable, uint64 va, uint64 max_sz) {
   // Check if address is in valid range
   if (va >= max_sz)
     return 0;
-  
+
   va = PAGEROUNDDOWN(va);
-  
+
   // Check if already mapped
   if (ismapped(pagetable, va)) {
     return 0;
   }
-  
+
   // Allocate physical memory
   mem = (uint64)kalloc();
   if (mem == 0)
     return 0;
-  
+
   // Clear the page
   memset((void *)mem, 0, PAGESIZE);
-  
+
   // Map the page with user permissions
   if (mappages(pagetable, va, PAGESIZE, mem, PTE_W | PTE_U | PTE_R) != 0) {
     kfree((void *)mem);
     return 0;
   }
-  
+
   return mem;
+}
+
+// Copy to either a user address, or kernel address,
+// depending on usr_dst.
+// Returns 0 on success, -1 on error.
+int either_copyout(int user_dst, uint64 dst, void *src, uint64 len) {
+  struct proc *p = myproc();
+  if (user_dst) {
+    return copyout(p->pagetable, dst, src, len);
+  } else {
+    memmove((char *)dst, src, len);
+    return 0;
+  }
+}
+
+// Copy from either a user address, or kernel address,
+// depending on usr_src.
+// Returns 0 on success, -1 on error.
+int either_copyin(void *dst, int user_src, uint64 src, uint64 len) {
+  struct proc *p = myproc();
+  if (user_src) {
+    return copyin(p->pagetable, dst, src, len);
+  } else {
+    memmove(dst, (char *)src, len);
+    return 0;
+  }
 }

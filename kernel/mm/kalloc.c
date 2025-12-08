@@ -1,4 +1,3 @@
-
 // Enhanced Physical Memory Allocator
 // Features:
 // - Memory statistics (free/used/total pages)
@@ -6,10 +5,10 @@
 // - Allocation tracking for leak detection
 // - Debug information output
 
-#include "defs.h"
-#include "memlayout.h"
-#include "riscv.h"
-#include "types.h"
+#include "../include/defs.h"
+#include "../include/memlayout.h"
+#include "../include/riscv.h"
+#include "../include/types.h"
 
 void kfree(void *pa);
 void freerange(void *pa_start, void *pa_end);

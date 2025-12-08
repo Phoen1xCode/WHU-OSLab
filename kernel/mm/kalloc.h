@@ -20,11 +20,11 @@ void kmem_dump_freelist(void);
 // 带追踪的分配/释放宏
 // 使用 KALLOC() 和 KFREE() 可以自动记录调用位置
 #ifdef KMEM_DEBUG
-  #define KALLOC() kalloc_internal(__FILE__, __LINE__)
-  #define KFREE(pa) kfree_internal(pa, __FILE__, __LINE__)
+#define KALLOC() kalloc_internal(__FILE__, __LINE__)
+#define KFREE(pa) kfree_internal(pa, __FILE__, __LINE__)
 #else
-  #define KALLOC() kalloc()
-  #define KFREE(pa) kfree(pa)
+#define KALLOC() kalloc()
+#define KFREE(pa) kfree(pa)
 #endif
 
 // 引用计数宏
