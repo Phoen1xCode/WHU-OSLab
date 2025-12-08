@@ -3,9 +3,9 @@
 //
 #include <stdarg.h>
 
-#include "defs.h"
-#include "spinlock.h"
-#include "types.h"
+#include "../include/defs.h"
+#include "../include/types.h"
+#include "../sync/spinlock.h"
 
 #define BACKSPACE 0x100
 #define C(x) ((x) - '@') // Control-x
