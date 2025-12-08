@@ -198,7 +198,7 @@ void virtio_disk_init(void);
 void virtio_disk_rw(struct buf *, int);
 void virtio_disk_intr(void);
 
-// pipe.c (placeholder)
+// pipe.c - Inter-Process Communication (kernel/ipc/)
 int pipealloc(struct file **, struct file **);
 void pipeclose(struct pipe *, int);
 int piperead(struct pipe *, uint64, int);
