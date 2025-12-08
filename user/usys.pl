@@ -50,4 +50,16 @@ entry("uptime");
 entry("write");
 entry("read");
 
+# 文件系统相关
+entry("open");
+entry("close");
+entry("unlink");
+entry("link");
+entry("mkdir");
+entry("chdir");
+entry("dup");
+entry("pipe");
+entry("fstat");
+entry("mknod");
+
 entry("hello");  # 自定义系统调用

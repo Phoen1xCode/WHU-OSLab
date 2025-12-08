@@ -42,15 +42,9 @@ int main() {
   printf("[INIT] Initializing virtio disk...\n");
   virtio_disk_init(); // emulated hard disk
   printf("[INIT] Initializing file system...\n");
-  fsinit(ROOTDEV); // file system
-
-  // printf("[INIT] create first user process\n");
-  // // 创建用户进程
-  // userinit(); // first user process
-
-  // 创建内核线程运行测试（包括新的 sys_hello 系统调用测试）
-  printf("[INIT] creating test thread...\n");
-  // kthread_create(test_main);
+  fileinit();
+  printf("[INIT] create first user process\n");
+  userinit(); // first user process
 
   // 进入调度器循环
   printf("[INIT] starting scheduler...\n");

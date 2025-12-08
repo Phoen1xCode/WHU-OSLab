@@ -33,6 +33,18 @@ int uptime(void);
 int write(int fd, const void *buf, int n);
 int read(int fd, void *buf, int n);
 
+// 文件系统相关
+int open(const char *path, int omode);
+int close(int fd);
+int unlink(const char *path);
+int link(const char *old, const char *newpath);
+int mkdir(const char *path);
+int chdir(const char *path);
+int dup(int fd);
+int pipe(int *fds);
+int fstat(int fd, void *st);
+int mknod(const char *path, short major, short minor);
+
 // 自定义系统调用
 void hello(void);
 

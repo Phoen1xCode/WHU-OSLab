@@ -60,7 +60,9 @@ void proc_freepagetable(pagetable_t pagetable, uint64 sz) {
 // A fork child's very first scheduling by scheduler()
 // will swtch to forkret.
 void forkret(void) {
+  // extern char userret[];
   static int first = 1;
+  struct proc *p = myproc();
 
   // Still holding p->lock from scheduler.
   release(&myproc()->lock);
@@ -69,7 +71,7 @@ void forkret(void) {
     // File system initialization must be run in the context of a
     // regular process (e.g., because it calls sleep), and thus cannot
     // be run from main().
-    // fsinit(ROOTDEV);
+    fsinit(ROOTDEV);
 
     first = 0;
     // ensure other cores see first=0.
@@ -77,7 +79,10 @@ void forkret(void) {
 
     // We can invoke kexec() now that file system is initialized.
     // Put the return value (argc) of kexec into a0.
-    // p->trapframe->a0 = kexec("/init", (char *[]){ "/init", 0 });
+    // p->trapframe->a0 = kexec("/init", (char *[]){"/init", 0});
+    // if (p->trapframe->a0 == -1) {
+    // panic("exec");
+    // }
   }
 
   usertrapret();

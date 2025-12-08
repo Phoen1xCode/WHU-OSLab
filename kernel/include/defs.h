@@ -37,6 +37,8 @@ char *safestrcpy(char *, const char *, int);
 int strlen(const char *);
 int strncmp(const char *, const char *, uint);
 char *strncpy(char *, const char *, int);
+int strcmp(const char *, const char *);
+int snprintf(char *, int, const char *, ...);
 
 // kalloc.c
 void kinit(void);
