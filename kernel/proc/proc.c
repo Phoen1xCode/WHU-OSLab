@@ -1,10 +1,10 @@
-#include "proc.h"
-#include "defs.h"
-#include "memlayout.h"
-#include "param.h"
-#include "riscv.h"
-#include "spinlock.h"
-#include "types.h"
+#include "../proc/proc.h"
+#include "../include/defs.h"
+#include "../include/memlayout.h"
+#include "../include/param.h"
+#include "../include/riscv.h"
+#include "../include/types.h"
+#include "../sync/spinlock.h"
 
 struct cpu cpus[NCPU];   // CPU 数组
 struct proc proc[NPROC]; // 进程表

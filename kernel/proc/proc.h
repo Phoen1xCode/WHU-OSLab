@@ -1,9 +1,9 @@
+#include "../include/defs.h"
+#include "../include/param.h"
+#include "../sync/spinlock.h"
+
 #ifndef PROC_H
 #define PROC_H
-
-#include "param.h"
-#include "defs.h"
-#include "spinlock.h"
 
 /*
 两种上下文
@@ -93,12 +93,12 @@ struct trapframe {
 };
 
 enum procstate {
-  UNUSED, // 进程槽位未使用
-  USED, // 进程已分配但未初始化完成
+  UNUSED,   // 进程槽位未使用
+  USED,     // 进程已分配但未初始化完成
   SLEEPING, // 进程睡眠等待
   RUNNABLE, // 就绪，等待调度
-  RUNNING, // 正在运行
-  ZOMBIE // 僵尸状态 已退出等待父进程回收
+  RUNNING,  // 正在运行
+  ZOMBIE    // 僵尸状态 已退出等待父进程回收
 };
 
 // Per-process state
@@ -106,24 +106,25 @@ struct proc {
   struct spinlock lock; // 保护进程状态的自旋锁
 
   // p->lock must be held when using these:
-  enum procstate state;        // Process state 进程状态
-  void *chan;                 // If non-zero, sleeping on chan 睡眠通道(等待的事件地址)
-  int killed;                 // If non-zero, have been killed 是否被杀死
-  int xstate;                 // Exit status to be returned to parent's wait 退出状态 返回给父进程
-  int pid;                    // Process ID 进程ID
+  enum procstate state; // Process state 进程状态
+  void *chan; // If non-zero, sleeping on chan 睡眠通道(等待的事件地址)
+  int killed; // If non-zero, have been killed 是否被杀死
+  int xstate; // Exit status to be returned to parent's wait 退出状态
+              // 返回给父进程
+  int pid;    // Process ID 进程ID
 
   // wait_lock must be held when using this:
-  struct proc *parent;        // Parent process 父进程
+  struct proc *parent; // Parent process 父进程
 
   // these are private to the process, so p->lock need not be held.
-  uint64 kstack;              // Virtual address of kernel stack 内核栈虚拟地址
-  uint64 sz;                  // Size of process memory (bytes) 进程内存大小(字节)
-  pagetable_t pagetable;      // User page table 用户页表
+  uint64 kstack;         // Virtual address of kernel stack 内核栈虚拟地址
+  uint64 sz;             // Size of process memory (bytes) 进程内存大小(字节)
+  pagetable_t pagetable; // User page table 用户页表
   struct trapframe *trapframe; // data page for trampoline.S 进程陷阱帧
-  struct context context;     // swtch() here to run process 切换到进程的上下文
-  // struct file *ofile[NOFILE]; // Open files 打开的文件
-  // struct inode *cwd;          // Current directory 当前工作目录
-  char name[16];              // Process name (debugging) 进程名称
+  struct context context;      // swtch() here to run process 切换到进程的上下文
+  struct file *ofile[NOFILE];  // Open files 打开的文件
+  struct inode *cwd;           // Current directory 当前工作目录
+  char name[16];               // Process name (debugging) 进程名称
 };
 
 #endif // PROC_H
