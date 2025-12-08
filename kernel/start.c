@@ -1,6 +1,6 @@
-#include "include/defs.h"
-#include "include/riscv.h"
-#include "include/types.h"
+#include "./include/defs.h"
+#include "./include/riscv.h"
+#include "./include/types.h"
 
 int main();
 void timerinit();

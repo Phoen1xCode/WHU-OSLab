@@ -1,22 +1,34 @@
 K=kernel
 U=user
 
+# Kernel object files organized by subsystem
 OBJS = \
 	$(K)/entry.o \
 	$(K)/start.o \
-	$(K)/uart.o \
-	$(K)/console.o \
-	$(K)/printf.o \
-	$(K)/string.o \
-	$(K)/kalloc.o \
-	$(K)/vm.o \
-	$(K)/trap.o \
-	$(K)/trampoline.o \
-	$(K)/kernelvector.o \
-	$(K)/plic.o \
-	$(K)/spinlock.o \
-	$(K)/proc.o \
-	$(K)/main.o
+	$(K)/main.o \
+	$(K)/driver/uart.o \
+	$(K)/driver/console.o \
+	$(K)/driver/plic.o \
+	$(K)/driver/virtio_disk.o \
+	$(K)/lib/printf.o \
+	$(K)/lib/string.o \
+	$(K)/mm/kalloc.o \
+	$(K)/mm/vm.o \
+	$(K)/sync/spinlock.o \
+	$(K)/sync/sleeplock.o \
+	$(K)/proc/proc.o \
+	$(K)/proc/swtch.o \
+	$(K)/trap/trap.o \
+	$(K)/trap/trampoline.o \
+	$(K)/trap/kernelvector.o \
+	$(K)/trap/syscall.o \
+	$(K)/trap/sysproc.o \
+	$(K)/trap/sysfile.o \
+	$(K)/fs/bio.o \
+	$(K)/fs/fs.o \
+	$(K)/fs/log.o \
+	$(K)/fs/file.o \
+	$(K)/ipc/pipe.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # Try to infer the correct TOOLPREFIX if not set
@@ -47,49 +59,86 @@ MIN_QEMU_VERSION = 7.2
 
 # Build flags
 RISCV_ARCH = -march=rv64gc -mabi=lp64
-CFLAGS = $(RISCV_ARCH) -ffreestanding -fno-builtin -fno-stack-protector -nostdlib -O2 -g -mcmodel=medany -I$(K)
-ASFLAGS = $(RISCV_ARCH) -ffreestanding -nostdlib -O2 -g -I$(K)
+INCLUDES = -I. -I$(K)/include
+CFLAGS = $(RISCV_ARCH) -ffreestanding -fno-builtin -fno-builtin-log -fno-stack-protector -nostdlib -O2 -g -mcmodel=medany $(INCLUDES)
+ASFLAGS = $(RISCV_ARCH) -ffreestanding -nostdlib -O2 -g $(INCLUDES)
 LDFLAGS = -nostdlib -T $(K)/kernel.ld -Wl,--build-id=none
 
-.PHONY: all clean run
+.PHONY: all clean run qemu fs.img
 
 all: $(K)/kernel.elf
 
 $(K)/kernel.elf: $(OBJS) $(K)/kernel.ld
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)
 
-$(K)/entry.o: $(K)/entry.S
+# Pattern rules for kernel source files in root
+$(K)/%.o: $(K)/%.S
 	$(CC) $(ASFLAGS) -c -o $@ $<
 
-$(K)/start.o: $(K)/start.c $(K)/types.h
+$(K)/%.o: $(K)/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(K)/uart.o: $(K)/uart.c $(K)/memlayout.h $(K)/types.h
+# Pattern rules for kernel source files in subdirectories
+$(K)/driver/%.o: $(K)/driver/%.S
+	$(CC) $(ASFLAGS) -c -o $@ $<
+
+$(K)/driver/%.o: $(K)/driver/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(K)/console.o: $(K)/console.c $(K)/defs.h $(K)/types.h
+$(K)/lib/%.o: $(K)/lib/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(K)/printf.o: $(K)/printf.c $(K)/defs.h $(K)/types.h
+$(K)/mm/%.o: $(K)/mm/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(K)/string.o: $(K)/string.c $(K)/defs.h $(K)/types.h
+$(K)/sync/%.o: $(K)/sync/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(K)/kalloc.o: $(K)/kalloc.c $(K)/defs.h $(K)/types.h $(K)/memlayout.h $(K)/riscv.h
+$(K)/proc/%.o: $(K)/proc/%.S
+	$(CC) $(ASFLAGS) -c -o $@ $<
+
+$(K)/proc/%.o: $(K)/proc/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(K)/kalloc_test.o: $(K)/kalloc_test.c $(K)/defs.h $(K)/types.h $(K)/kalloc.h $(K)/riscv.h
+$(K)/trap/%.o: $(K)/trap/%.S
+	$(CC) $(ASFLAGS) -c -o $@ $<
+
+$(K)/trap/%.o: $(K)/trap/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(K)/vm.o: $(K)/vm.c $(K)/defs.h $(K)/types.h $(K)/memlayout.h $(K)/riscv.h
+$(K)/fs/%.o: $(K)/fs/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(K)/vm_test.o: $(K)/vm_test.c $(K)/defs.h $(K)/types.h $(K)/memlayout.h $(K)/riscv.h
+$(K)/ipc/%.o: $(K)/ipc/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+# mkfs tool - compiled for host
+mkfs/mkfs: mkfs/mkfs.c $(K)/fs/fs.h $(K)/include/param.h $(K)/fs/stat.h
+	gcc -Wno-unknown-attributes -I. -o mkfs/mkfs mkfs/mkfs.c
+
+# File system image
+UPROGS=\
+
+fs.img: mkfs/mkfs README.md $(UPROGS)
+	mkfs/mkfs fs.img README.md $(UPROGS)
 
 clean:
-	rm -f $(K)/*.o $(K)/kernel.elf
+	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg
+	rm -f $(K)/*.o $(K)/kernel.elf fs.img mkfs/mkfs
+	rm -f $(K)/driver/*.o $(K)/lib/*.o $(K)/mm/*.o $(K)/sync/*.o
+	rm -f $(K)/proc/*.o $(K)/trap/*.o $(K)/fs/*.o $(K)/ipc/*.o
 
-run: all
-	$(QEMU) -machine virt -bios none -nographic -kernel $(K)/kernel.elf
+# QEMU options
+QEMUOPTS = -machine virt -bios none -kernel $(K)/kernel.elf -m 128M -smp 1 -nographic
+QEMUOPTS += -global virtio-mmio.force-legacy=false
+QEMUOPTS += -drive file=fs.img,if=none,format=raw,id=x0
+QEMUOPTS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+run: all fs.img
+	$(QEMU) $(QEMUOPTS)
+
+qemu: run
+
+qemu-gdb: all fs.img
+	@echo "*** Now run 'gdb' in another window." 1>&2
+	$(QEMU) $(QEMUOPTS) -S -gdb tcp::26000

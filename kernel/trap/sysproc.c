@@ -11,10 +11,29 @@
 #include "../include/types.h"
 #include "../proc/proc.h"
 #include "../sync/spinlock.h"
+#include "../fs/file.h"
 
 // 外部声明
 extern struct spinlock tickslock;
 extern uint ticks;
+
+// Fetch the nth word-sized system call argument as a file descriptor
+// and return both the descriptor and the corresponding struct file.
+static int
+argfd(int n, int *pfd, struct file **pf)
+{
+  int fd;
+  struct file *f;
+
+  argint(n, &fd);
+  if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
+    return -1;
+  if(pfd)
+    *pfd = fd;
+  if(pf)
+    *pf = f;
+  return 0;
+}
 
 /*
  * sys_fork - 创建子进程
@@ -138,38 +157,16 @@ uint64 sys_uptime(void) {
  * 返回值：实际写入的字节数，失败返回-1
  */
 uint64 sys_write(void) {
-  int fd;
-  uint64 addr;
+  struct file *f;
   int n;
+  uint64 p;
 
-  argint(0, &fd);
-  argaddr(1, &addr);
+  argaddr(1, &p);
   argint(2, &n);
-
-  // 目前仅支持 stdout (1) 和 stderr (2) 输出到控制台
-  if (fd != 1 && fd != 2)
+  if(argfd(0, 0, &f) < 0)
     return -1;
 
-  if (n <= 0)
-    return 0;
-
-  // 限制单次写入大小
-  if (n > 512)
-    n = 512;
-
-  struct proc *p = myproc();
-  char buf[512];
-
-  // 从用户空间复制数据
-  if (copyin(p->pagetable, buf, addr, n) < 0)
-    return -1;
-
-  // 输出到控制台
-  for (int i = 0; i < n; i++) {
-    consputc(buf[i]);
-  }
-
-  return n;
+  return filewrite(f, p, n);
 }
 
 /*
@@ -183,29 +180,15 @@ uint64 sys_write(void) {
  *
  */
 uint64 sys_read(void) {
-  int fd;
-  uint64 addr;
+  struct file *f;
   int n;
+  uint64 p;
 
-  argint(0, &fd);
-  argaddr(1, &addr);
+  argaddr(1, &p);
   argint(2, &n);
-
-  // 目前仅支持 stdin (0) 从控制台读取
-  if (fd != 0)
+  if(argfd(0, 0, &f) < 0)
     return -1;
-
-  if (n <= 0)
-    return 0;
-
-  // TODO: 实现完整的控制台输入缓冲区
-  // 目前返回0表示没有输入
-  // 完整实现需要：
-  // 1. consoleintr() 在 console.c 中收集输入到缓冲区
-  // 2. 这里从缓冲区读取数据
-  // 3. 如果缓冲区为空，进程睡眠等待输入
-
-  return 0;
+  return fileread(f, p, n);
 }
 
 /*

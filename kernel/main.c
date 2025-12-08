@@ -1,7 +1,7 @@
-#include "include/defs.h"
-#include "include/memlayout.h"
-#include "include/param.h"
-#include "include/riscv.h"
+#include "./include/defs.h"
+#include "./include/memlayout.h"
+#include "./include/param.h"
+#include "./include/riscv.h"
 
 extern void test_main(void);
 

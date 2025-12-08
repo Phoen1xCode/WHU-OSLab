@@ -80,7 +80,8 @@ int argstr(int n, char *buf, int max) {
 
 /*
  * 系统调用处理函数声明
- * 这些函数在 sysproc.c 中实现
+ * 进程相关在 sysproc.c 中实现
+ * 文件系统相关在 sysfile.c 中实现
  */
 extern uint64 sys_fork(void);
 extern uint64 sys_exit(void);
@@ -90,9 +91,23 @@ extern uint64 sys_kill(void);
 extern uint64 sys_sleep(void);
 extern uint64 sys_sbrk(void);
 extern uint64 sys_uptime(void);
+
+// 文件系统相关系统调用
 extern uint64 sys_write(void);
 extern uint64 sys_read(void);
-extern uint64 sys_hello(void);
+extern uint64 sys_open(void);
+extern uint64 sys_close(void);
+extern uint64 sys_fstat(void);
+extern uint64 sys_pipe(void);
+extern uint64 sys_dup(void);
+extern uint64 sys_chdir(void);
+extern uint64 sys_mkdir(void);
+extern uint64 sys_mknod(void);
+extern uint64 sys_unlink(void);
+extern uint64 sys_link(void);
+
+// 自定义系统调用（保留）
+// extern uint64 sys_hello(void);
 
 /*
  * 系统调用分发表
@@ -103,7 +118,10 @@ static uint64 (*syscalls[])(void) = {
     [SYS_fork] sys_fork,     [SYS_exit] sys_exit,     [SYS_wait] sys_wait,
     [SYS_getpid] sys_getpid, [SYS_kill] sys_kill,     [SYS_sleep] sys_sleep,
     [SYS_sbrk] sys_sbrk,     [SYS_uptime] sys_uptime, [SYS_write] sys_write,
-    [SYS_read] sys_read,     [SYS_hello] sys_hello,
+    [SYS_read] sys_read,     [SYS_open] sys_open,       [SYS_close] sys_close,
+    [SYS_fstat] sys_fstat,   [SYS_pipe] sys_pipe,       [SYS_dup] sys_dup,
+    [SYS_chdir] sys_chdir,   [SYS_mkdir] sys_mkdir,     [SYS_mknod] sys_mknod,
+    [SYS_unlink] sys_unlink, [SYS_link] sys_link,
 };
 
 // 系统调用名称 for 调试
@@ -111,7 +129,10 @@ static char *syscall_names[] = {
     [SYS_fork] "fork",     [SYS_exit] "exit",     [SYS_wait] "wait",
     [SYS_getpid] "getpid", [SYS_kill] "kill",     [SYS_sleep] "sleep",
     [SYS_sbrk] "sbrk",     [SYS_uptime] "uptime", [SYS_write] "write",
-    [SYS_read] "read",     [SYS_hello] "hello",
+    [SYS_read] "read",     [SYS_open] "open",       [SYS_close] "close",
+    [SYS_fstat] "fstat",   [SYS_pipe] "pipe",       [SYS_dup] "dup",
+    [SYS_chdir] "chdir",   [SYS_mkdir] "mkdir",     [SYS_mknod] "mknod",
+    [SYS_unlink] "unlink", [SYS_link] "link",
 };
 
 /*
