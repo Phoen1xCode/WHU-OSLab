@@ -11,23 +11,21 @@ struct spinlock;
 struct stat;
 struct superblock;
 
+// uart.c
+void uart_putc(char c);
+void uart_puts(const char *s);
+int uart_getc(void);
+
 // console.c
-void consoleinit(void);
-void consputc(int c);
-void consputs(const char *s);
-void consoleintr(int c);
+void console_putc(int c);
+void console_puts(const char *s);
 void clear_screen(void);
 
 // printf.c
-void printfinit(void);
+void print_int(long long xx, int base, int sign);
+void print_ptr(uint64 x);
 int printf(const char *fmt, ...);
 void panic(char *) __attribute__((noreturn));
-
-// uart.c
-void uartinit(void);
-void uartputc(char c);
-void uartputs(const char *s);
-void uartintr(void);
 
 // string.c
 int memcmp(const void *, const void *, uint);
@@ -209,3 +207,9 @@ int pipewrite(struct pipe *, uint64, int);
 // vm.c extension
 int either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int either_copyin(void *dst, int user_src, uint64 src, uint64 len);
+
+// TEST
+// lab1.c
+void test_printf_basic();
+void test_printf_edge_cases();
+void test_clear_screen();
