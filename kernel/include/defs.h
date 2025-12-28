@@ -1,4 +1,4 @@
-#include "types.h"
+#include "../include/types.h"
 
 struct buf;
 struct context;
@@ -28,51 +28,48 @@ int printf(const char *fmt, ...);
 void panic(char *) __attribute__((noreturn));
 
 // string.c
+void *memset(void *dst, int c, uint n);
 int memcmp(const void *, const void *, uint);
 void *memmove(void *, const void *, uint);
-void *memset(void *, int, uint);
-char *safestrcpy(char *, const char *, int);
-int strlen(const char *);
+void *memcpy(void *, const void *, uint);
 int strncmp(const char *, const char *, uint);
 char *strncpy(char *, const char *, int);
+char *safestrcpy(char *, const char *, int);
+int strlen(const char *);
 int strcmp(const char *, const char *);
-int snprintf(char *, int, const char *, ...);
 
 // kalloc.c
-void kinit(void);
-void *kalloc(void);
-void *kalloc_internal(const char *, int);
-void kfree(void *);
-void kfree_internal(void *, const char *, int);
+void kmem_init(void);
 void freerange(void *, void *);
-int kref(void *);
-void kmem_stats(void);
-void kmem_leak_check(void);
-void kmem_dump_freelist(void);
+void free_page(void *);
+void free_page_to_freelist(void *);
+void *alloc_page(void);
+void *alloc_pages(int n);
 
 // vm.c
-void kvminit(void);
-void kvminithart(void);
-pagetable_t kvmmake(void);
-void kvmmap(pagetable_t, uint64, uint64, uint64, int);
-int mappages(pagetable_t, uint64, uint64, uint64, int);
-pte_t *walk(pagetable_t, uint64, int);
+pagetable_t create_pagetable(void);
+void destroy_pagetable(pagetable_t);
+int map_page(pagetable_t, uint64, uint64, uint64, int);
+void unmap_page(pagetable_t, uint64, uint64, int);
+void map_region(pagetable_t, uint64, uint64, uint64, int);
+void kvm_init(void);
+void kvm_inithart(void);
+pte_t *walk_create(pagetable_t, uint64);
+pte_t *walk_lookup(pagetable_t, uint64);
 uint64 walkaddr(pagetable_t, uint64);
-pagetable_t uvmcreate(void);
-void uvmfirst(pagetable_t, uchar *, uint);
-uint64 uvmalloc(pagetable_t, uint64, uint64, int);
-uint64 uvmdealloc(pagetable_t, uint64, uint64);
-void uvmunmap(pagetable_t, uint64, uint64, int);
-int uvmcopy(pagetable_t, pagetable_t, uint64);
-void uvmclear(pagetable_t, uint64);
+int copy_pagetable(pagetable_t, pagetable_t, uint64);
 int copyout(pagetable_t, uint64, char *, uint64);
 int copyin(pagetable_t, char *, uint64, uint64);
 int copyinstr(pagetable_t, char *, uint64, uint64);
-void freewalk(pagetable_t);
-void uvmfree(pagetable_t, uint64);
-void proc_mapstacks(pagetable_t);
+int either_copyout(int, uint64, void *, uint64);
+int either_copyin(void *, int, uint64, uint64);
+
+void uvmfirst(pagetable_t, uchar *, uint64);
+uint64 uvmalloc(pagetable_t, uint64, uint64, int);
+uint64 uvmdealloc(pagetable_t, uint64, uint64);
+int uvmcopy(pagetable_t, pagetable_t, uint64);
 int ismapped(pagetable_t, uint64);
-uint64 vmfault(pagetable_t, uint64, uint64);
+uint64 vmfault(pagetable_t, uint64, int);
 
 // trap.c
 void trapinit(void);
@@ -105,6 +102,7 @@ void pop_off(void);
 int cpuid(void);
 struct cpu *mycpu(void);
 struct proc *myproc(void);
+void proc_mapstacks(pagetable_t);
 void procinit(void);
 void userinit(void);
 int growproc(int);
@@ -204,12 +202,17 @@ void pipeclose(struct pipe *, int);
 int piperead(struct pipe *, uint64, int);
 int pipewrite(struct pipe *, uint64, int);
 
-// vm.c extension
-int either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
-int either_copyin(void *dst, int user_src, uint64 src, uint64 len);
-
 // TEST
-// lab1.c
+// lab2.c
 void test_printf_basic();
 void test_printf_edge_cases();
 void test_clear_screen();
+// lab3.c
+void test_physical_memory();
+void test_pagetable();
+void test_virtual_memory();
+void test_alloc_pages();
+// lab4.c
+void pt_init(void);
+void test_timer_interrupt(void);
+void test_exception_handling(void);

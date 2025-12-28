@@ -13,4 +13,8 @@ typedef unsigned long uint64;
 typedef uint64 *pagetable_t;
 typedef uint64 pte_t;
 
+#ifndef NULL
+#define NULL ((void *)0)
+#endif
+
 #endif // TYPES_H

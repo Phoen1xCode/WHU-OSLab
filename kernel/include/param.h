@@ -12,3 +12,4 @@
 #define FSSIZE 2000                 // size of file system in blocks
 #define MAXPATH 128                 // maximum file path name
 #define USERSTACK 1                 // user stack pages
+#define PAGE_POOL_CAP 16            // 页面池容量
