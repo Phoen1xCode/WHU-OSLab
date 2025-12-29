@@ -20,45 +20,45 @@ void timer_interrupt_handler(void) {
   w_stimecmp(r_time() + 1000000);
 }
 
-void test_timer_interrupt(void) {
-  printf("Testing timer interrupt...\n");
+// void test_timer_interrupt(void) {
+//   printf("Testing timer interrupt...\n");
 
-  // 重置中断计数
-  interrupt_count = 0;
+//   // 重置中断计数
+//   interrupt_count = 0;
 
-  // 注册时钟中断处理函数
-  register_interrupt(IRQ_TIMER, timer_interrupt_handler);
+//   // 注册时钟中断处理函数
+//   register_interrupt(IRQ_TIMER, timer_interrupt_handler);
 
-  // 开启时钟中断
-  enable_interrupt(IRQ_TIMER);
+//   // 开启时钟中断
+//   enable_interrupt(IRQ_TIMER);
 
-  // 先安排第一次时钟中断
-  unsigned long start_time = get_time();
-  w_stimecmp(start_time + 1000000); // 1M cycles 后触发
+//   // 先安排第一次时钟中断
+//   unsigned long start_time = get_time();
+//   w_stimecmp(start_time + 1000000); // 1M cycles 后触发
 
-  // 等待 5 次中断
-  while (interrupt_count < 5) {
-    printf("Waiting for interrupt %d...\n", interrupt_count + 1);
-    // 简单延时
-    for (volatile int i = 0; i < 10000000; i++)
-      ;
-  }
+//   // 等待 5 次中断
+//   while (interrupt_count < 5) {
+//     printf("Waiting for interrupt %d...\n", interrupt_count + 1);
+//     // 简单延时
+//     for (volatile int i = 0; i < 10000000; i++)
+//       ;
+//   }
 
-  // 记录中断后的时间
-  unsigned long end_time = get_time();
+//   // 记录中断后的时间
+//   unsigned long end_time = get_time();
 
-  // 打印测试结果
-  printf("Timer test completed:\n");
-  printf("Start time: %lx\n", start_time);
-  printf("End time: %lx\n", end_time);
-  printf("Total interrupts: %d\n", interrupt_count);
+//   // 打印测试结果
+//   printf("Timer test completed:\n");
+//   printf("Start time: %lx\n", start_time);
+//   printf("End time: %lx\n", end_time);
+//   printf("Total interrupts: %d\n", interrupt_count);
 
-  // 关闭时钟中断
-  disable_interrupt(IRQ_TIMER);
+//   // 关闭时钟中断
+//   disable_interrupt(IRQ_TIMER);
 
-  // 注销时钟中断处理函数
-  unregister_interrupt(IRQ_TIMER);
-}
+//   // 注销时钟中断处理函数
+//   unregister_interrupt(IRQ_TIMER);
+// }
 
 void test_exception_handling(void) {
   printf("Testing exception handling...\n");

@@ -15,6 +15,9 @@ int nextpid = 1; // 下一个可用PID
 struct spinlock pid_lock;  // PID 分配锁
 struct spinlock wait_lock; // wait() 同步锁
 
+// 调度器上下文
+struct context sched_ctx;
+
 extern void forkret(void);
 static void freeproc(struct proc *p);
 
@@ -25,7 +28,7 @@ pagetable_t proc_pagetable(struct proc *p) {
   pagetable_t pagetable;
 
   // An empty page table.
-  pagetable = uvmcreate();
+  pagetable = create_pagetable();
   if (pagetable == 0)
     return 0;
 
@@ -33,18 +36,18 @@ pagetable_t proc_pagetable(struct proc *p) {
   // at the highest user virtual address.
   // only the supervisor uses it, on the way
   // to/from user space, so not PTE_U.
-  if (mappages(pagetable, TRAMPOLINE, PAGESIZE, (uint64)trampoline,
+  if (map_page(pagetable, TRAMPOLINE, (uint64)trampoline, PAGESIZE,
                PTE_R | PTE_X) < 0) {
-    uvmfree(pagetable, 0);
+    destroy_pagetable(pagetable);
     return 0;
   }
 
   // map the trapframe page just below the trampoline page, for
   // trampoline.S.
-  if (mappages(pagetable, TRAPFRAME, PAGESIZE, (uint64)(p->trapframe),
+  if (map_page(pagetable, TRAPFRAME, (uint64)(p->trapframe), PAGESIZE,
                PTE_R | PTE_W) < 0) {
-    uvmunmap(pagetable, TRAMPOLINE, 1, 0);
-    uvmfree(pagetable, 0);
+    unmap_page(pagetable, TRAMPOLINE, 1, 0);
+    destroy_pagetable(pagetable);
     return 0;
   }
 
@@ -52,9 +55,9 @@ pagetable_t proc_pagetable(struct proc *p) {
 }
 
 void proc_freepagetable(pagetable_t pagetable, uint64 sz) {
-  uvmunmap(pagetable, TRAMPOLINE, 1, 0);
-  uvmunmap(pagetable, TRAPFRAME, 1, 0);
-  uvmfree(pagetable, sz);
+  unmap_page(pagetable, TRAMPOLINE, 1, 0);
+  unmap_page(pagetable, TRAPFRAME, 1, 0);
+  destroy_pagetable(pagetable);
 }
 
 // A fork child's very first scheduling by scheduler()
@@ -101,6 +104,7 @@ void procinit(void) {
     initlock(&p->lock, "proc");
     p->state = UNUSED;
     p->kstack = KSTACK((int)(p - proc));
+    p->priority = 0;
   }
 }
 
@@ -139,6 +143,18 @@ int allocpid() {
   return pid;
 }
 
+void proc_mapstacks(pagetable_t kpgtbl) {
+  struct proc *p;
+
+  for (p = proc; p < &proc[NPROC]; p++) {
+    char *pa = alloc_page();
+    if (pa == 0)
+      panic("kalloc");
+    uint64 va = KSTACK((int)(p - proc));
+    map_region(kpgtbl, va, (unsigned long)pa, PAGESIZE, PTE_R | PTE_W);
+  }
+}
+
 static struct proc *allocproc(void) {
   struct proc *p;
 
@@ -158,7 +174,7 @@ found:
 
   // Allocate a trapframe page.
   // 分配陷阱帧页
-  if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
+  if ((p->trapframe = (struct trapframe *)alloc_page()) == 0) {
     freeproc(p); // 失败时通过 freeproc() 回滚
     // 并释放 p->lock 返回 0，避免资源泄漏
     release(&p->lock);
@@ -187,7 +203,7 @@ found:
 // p->lock must be held.
 static void freeproc(struct proc *p) {
   if (p->trapframe)
-    kfree((void *)p->trapframe);
+    free_page((void *)p->trapframe);
   p->trapframe = 0;
   if (p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
@@ -621,4 +637,244 @@ int killed(struct proc *p) {
   k = p->killed;
   release(&p->lock);
   return k;
+}
+
+// Create a new process with the given entry point.
+// Returns the pid of the new process, or -1 if failed.
+int create_process(void (*entry)(void)) {
+  struct proc *p = allocproc();
+  if (p == 0) {
+    return -1;
+  }
+
+  // Set up kernel stack to run the function via kthread_entry
+  p->context.ra = (uint64)entry;
+
+  // Set process name
+  safestrcpy(p->name, "process", sizeof(p->name));
+
+  // Initialize timeslice and timetotal
+  p->timeslice = 0;
+  p->timetotal = 0;
+
+  acquire(&p->lock);
+  p->state = RUNNABLE;
+  release(&p->lock);
+
+  return p->pid;
+}
+
+// Exit the process with the given status.
+// Similar to exit() but takes a proc pointer.
+void exit_process(struct proc *p, int status) {
+  if (p == 0) {
+    return;
+  }
+
+  // Similar to exit() but for a specific process
+  if (p == initproc) {
+    panic("init exiting");
+  }
+
+  // Close all open files.
+  // for(int fd = 0; fd < NOFILE; fd++){
+  //   if(p->ofile[fd]){
+  //     struct file *f = p->ofile[fd];
+  //     fileclose(f);
+  //     p->ofile[fd] = 0;
+  //   }
+  // }
+
+  acquire(&wait_lock);
+
+  // Give any children to init.
+  reparent(p);
+
+  // Parent might be sleeping in wait().
+  wakeup(p->parent);
+
+  acquire(&p->lock);
+
+  p->xstate = status;
+  p->state = ZOMBIE;
+
+  release(&wait_lock);
+  release(&p->lock);
+
+  // Jump into the scheduler, never to return.
+  // Use sched() which will switch to the scheduler context
+  struct proc *cur = myproc();
+  if (cur == p) {
+    // If we're exiting the current process, use sched()
+    acquire(&p->lock);
+    sched();
+    panic("zombie exit");
+  } else {
+    // If we're exiting another process (e.g., from test), just mark it as zombie
+    // The scheduler will clean it up
+  }
+}
+
+// Wait for a child process to exit and return its pid.
+// Return -1 if this process has no children.
+int wait_process(uint64 addr) {
+  struct proc *pp;
+  int havekids, pid;
+  struct proc *p = myproc();
+
+  acquire(&wait_lock);
+
+  for (;;) {
+    // Scan through table looking for exited children.
+    havekids = 0;
+    for (pp = proc; pp < &proc[NPROC]; pp++) {
+      if (pp->parent == p) {
+        // make sure the child isn't still in exit() or swtch().
+        acquire(&pp->lock);
+
+        havekids = 1;
+        if (pp->state == ZOMBIE) {
+          // Found one.
+          pid = pp->pid;
+          if (addr != 0 && copyout(p->pagetable, addr, (char *)&pp->xstate,
+                                   sizeof(pp->xstate)) < 0) {
+            release(&pp->lock);
+            release(&wait_lock);
+            return -1;
+          }
+          freeproc(pp);
+          release(&pp->lock);
+          release(&wait_lock);
+          return pid;
+        }
+        release(&pp->lock);
+      }
+    }
+
+    // No point waiting if we don't have any children.
+    if (!havekids || p->killed) {
+      release(&wait_lock);
+      return -1;
+    }
+
+    // Wait for a child to exit.
+    sleep(p, &wait_lock); // DOC: wait-sleep
+  }
+}
+
+// Set the priority of a process.
+void set_proc_priority(int pid, int pri) {
+  struct proc *p;
+
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if (p->pid == pid) {
+      p->priority = pri;
+      release(&p->lock);
+      return;
+    }
+    release(&p->lock);
+  }
+}
+
+// Priority-based scheduler.
+// Runs the highest priority RUNNABLE process.
+void scheduler_priority(void) {
+  struct proc *p;
+  struct proc *chosen;
+  int highest_priority;
+
+  for (;;) {
+    intr_on();
+    chosen = 0;
+    highest_priority = -1;
+
+    // Select the highest priority RUNNABLE process
+    for (p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE) {
+        int pr = p->priority;
+        if (pr > highest_priority) {
+          highest_priority = pr;
+          chosen = p;
+        }
+      }
+      release(&p->lock);
+    }
+
+    // No RUNNABLE processes, exit scheduler
+    if (!chosen) {
+      return;
+    }
+
+    acquire(&chosen->lock);
+    if (chosen->state == RUNNABLE) {
+      // Set process state to RUNNING
+      chosen->state = RUNNING;
+      mycpu()->proc = chosen;
+
+      // Decrease priority to allow cycling through processes
+      chosen->priority -= 3;
+      release(&chosen->lock);
+
+      // Save scheduler context, restore process context, run process
+      swtch(&sched_ctx, &chosen->context);
+
+      // Clear current process
+      mycpu()->proc = 0;
+    } else {
+      release(&chosen->lock);
+    }
+  }
+}
+
+// Round-robin scheduler.
+// Cycles through RUNNABLE processes in order.
+void scheduler_rotate(void) {
+  struct proc *p;
+  struct proc *chosen;
+
+  // Starting position for round-robin search
+  static int rr_idx = 0;
+
+  for (;;) {
+    intr_on();
+    chosen = 0;
+
+    // Find the first RUNNABLE process in round-robin order
+    for (int i = 0; i < NPROC; i++) {
+      int idx = (rr_idx + i) % NPROC;
+      p = &proc[idx];
+      acquire(&p->lock);
+      if (p->state == RUNNABLE) {
+        chosen = p;
+        // Update round-robin index to next position
+        rr_idx = (idx + 1) % NPROC;
+        release(&p->lock);
+        break;
+      }
+      release(&p->lock);
+    }
+
+    // No RUNNABLE processes, exit scheduler
+    if (!chosen) {
+      return;
+    }
+
+    acquire(&chosen->lock);
+    if (chosen->state == RUNNABLE) {
+      // Set process state to RUNNING
+      chosen->state = RUNNING;
+      mycpu()->proc = chosen;
+      release(&chosen->lock);
+
+      // Switch to process context, run process
+      swtch(&sched_ctx, &chosen->context);
+
+      // Clear current process
+      mycpu()->proc = 0;
+    } else {
+      release(&chosen->lock);
+    }
+  }
 }

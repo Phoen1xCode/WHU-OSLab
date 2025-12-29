@@ -105,6 +105,10 @@ enum procstate {
 struct proc {
   struct spinlock lock; // 保护进程状态的自旋锁
 
+  int priority;  // 进程优先级
+  int timeslice; // 进程已使用的时间片
+  int timetotal; // 进程总等待时间
+
   // p->lock must be held when using these:
   enum procstate state; // Process state 进程状态
   void *chan; // If non-zero, sleeping on chan 睡眠通道(等待的事件地址)

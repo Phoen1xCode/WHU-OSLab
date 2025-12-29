@@ -40,36 +40,38 @@ int strcmp(const char *, const char *);
 
 // kalloc.c
 void kmem_init(void);
-void freerange(void *, void *);
-void free_page(void *);
-void free_page_to_freelist(void *);
+void freerange(void *start, void *end);
+void free_page(void *pa);
+void free_page_to_freelist(void *pa);
 void *alloc_page(void);
 void *alloc_pages(int n);
 
 // vm.c
 pagetable_t create_pagetable(void);
-void destroy_pagetable(pagetable_t);
-int map_page(pagetable_t, uint64, uint64, uint64, int);
-void unmap_page(pagetable_t, uint64, uint64, int);
-void map_region(pagetable_t, uint64, uint64, uint64, int);
+void destroy_pagetable(pagetable_t pagetable);
+int map_page(pagetable_t pagetable, uint64 va, uint64 pa, uint64 size,
+             int perm);
+void unmap_page(pagetable_t pagetable, uint64 va, uint64 npages, int do_free);
+void map_region(pagetable_t pagetable, uint64 va, uint64 pa, uint64 size,
+                int perm);
 void kvm_init(void);
 void kvm_inithart(void);
-pte_t *walk_create(pagetable_t, uint64);
-pte_t *walk_lookup(pagetable_t, uint64);
-uint64 walkaddr(pagetable_t, uint64);
-int copy_pagetable(pagetable_t, pagetable_t, uint64);
-int copyout(pagetable_t, uint64, char *, uint64);
-int copyin(pagetable_t, char *, uint64, uint64);
-int copyinstr(pagetable_t, char *, uint64, uint64);
-int either_copyout(int, uint64, void *, uint64);
-int either_copyin(void *, int, uint64, uint64);
+pte_t *walk_create(pagetable_t pagetable, uint64 va);
+pte_t *walk_lookup(pagetable_t pagetable, uint64 va);
+uint64 walkaddr(pagetable_t pagetable, uint64 va);
+int copy_pagetable(pagetable_t src, pagetable_t dst, uint64 sz);
+int copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len);
+int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len);
+int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max);
+int either_copyout(int user_dst, uint64 dstva, void *src, uint64 len);
+int either_copyin(void *dst, int user_src, uint64 srcva, uint64 len);
 
-void uvmfirst(pagetable_t, uchar *, uint64);
-uint64 uvmalloc(pagetable_t, uint64, uint64, int);
-uint64 uvmdealloc(pagetable_t, uint64, uint64);
-int uvmcopy(pagetable_t, pagetable_t, uint64);
-int ismapped(pagetable_t, uint64);
-uint64 vmfault(pagetable_t, uint64, int);
+void uvmfirst(pagetable_t pagetable, uchar *src, uint64 sz);
+uint64 uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int perm);
+uint64 uvmdealloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz);
+int uvmcopy(pagetable_t from, pagetable_t to, uint64 sz);
+int ismapped(pagetable_t pagetable, uint64 va);
+uint64 vmfault(pagetable_t pagetable, uint64 va, int write);
 
 // trap.c
 void trapinit(void);
@@ -83,18 +85,18 @@ uint64 get_ticks(void);
 
 // syscall.c
 void syscall(void);
-void argint(int, int *);
-void argaddr(int, uint64 *);
-int fetchaddr(uint64, uint64 *);
-int fetchstr(uint64, char *, int);
-int argstr(int, char *, int);
+void argint(int n, int *ip);
+void argaddr(int n, uint64 *ip);
+int fetchaddr(uint64 addr, uint64 *ip);
+int fetchstr(uint64 addr, char *p, int max);
+int argstr(int n, char *p, int max);
 
 // sysproc.c
-int kill(int);
+int kill(int pid);
 
 // spinlock.c
-void initlock(struct spinlock *, char *);
-int holding(struct spinlock *);
+void initlock(struct spinlock *lk, char *name);
+int holding(struct spinlock *lk);
 void push_off(void);
 void pop_off(void);
 
@@ -102,22 +104,28 @@ void pop_off(void);
 int cpuid(void);
 struct cpu *mycpu(void);
 struct proc *myproc(void);
-void proc_mapstacks(pagetable_t);
+void proc_mapstacks(pagetable_t kpgtbl);
 void procinit(void);
 void userinit(void);
-int growproc(int);
+int growproc(int n);
 void forkret(void);
-void sleep(void *, struct spinlock *);
-void wakeup(void *);
+void sleep(void *chan, struct spinlock *lk);
+void wakeup(void *chan);
 void yield(void);
-void exit(int);
+void exit(int status);
 int fork(void);
 int kthread_create(void (*func)());
-int wait(uint64);
+int wait(uint64 addr);
 void scheduler(void) __attribute__((noreturn));
 void sched(void);
-void setkilled(struct proc *);
-int killed(struct proc *);
+void setkilled(struct proc *p);
+int killed(struct proc *p);
+int create_process(void (*entry)(void));
+void exit_process(struct proc *p, int status);
+int wait_process(uint64 addr);
+void set_proc_priority(int pid, int pri);
+void scheduler_priority(void);
+void scheduler_rotate(void);
 
 // swtch.S
 void swtch(struct context *, struct context *);
@@ -216,3 +224,7 @@ void test_alloc_pages();
 void pt_init(void);
 void test_timer_interrupt(void);
 void test_exception_handling(void);
+// lab5.c
+void test_process_creation(void);
+void test_scheduler(void);
+void test_synchronization(void);

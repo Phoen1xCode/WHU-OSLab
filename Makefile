@@ -4,31 +4,34 @@ U=user
 # Kernel object files organized by subsystem
 OBJS = \
 	$(K)/entry.o \
-	$(K)/start.o \
 	$(K)/main.o \
-	$(K)/driver/uart.o \
 	$(K)/driver/console.o \
 	$(K)/driver/plic.o \
+	$(K)/driver/uart.o \
 	$(K)/driver/virtio_disk.o \
 	$(K)/lib/printf.o \
 	$(K)/lib/string.o \
 	$(K)/mm/kalloc.o \
 	$(K)/mm/vm.o \
-	$(K)/sync/spinlock.o \
-	$(K)/sync/sleeplock.o \
 	$(K)/proc/proc.o \
 	$(K)/proc/swtch.o \
-	$(K)/trap/trap.o \
-	$(K)/trap/trampoline.o \
+	$(K)/sync/sleeplock.o \
+	$(K)/sync/spinlock.o \
 	$(K)/trap/kernelvector.o \
 	$(K)/trap/syscall.o \
-	$(K)/trap/sysproc.o \
 	$(K)/trap/sysfile.o \
+	$(K)/trap/sysproc.o \
+	$(K)/trap/trampoline.o \
+	$(K)/trap/trap.o \
 	$(K)/fs/bio.o \
+	$(K)/fs/file.o \
 	$(K)/fs/fs.o \
 	$(K)/fs/log.o \
-	$(K)/fs/file.o \
-	$(K)/ipc/pipe.o
+	$(K)/ipc/pipe.o \
+	$(K)/test/lab2.o \
+	$(K)/test/lab3.o \
+	$(K)/test/lab4.o \
+	$(K)/test/lab5.o \
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # Try to infer the correct TOOLPREFIX if not set
@@ -112,6 +115,9 @@ $(K)/fs/%.o: $(K)/fs/%.c
 $(K)/ipc/%.o: $(K)/ipc/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+$(K)/test/%.o: $(K)/test/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 # mkfs tool - compiled for host
 mkfs/mkfs: mkfs/mkfs.c $(K)/fs/fs.h $(K)/include/param.h $(K)/fs/stat.h
 	gcc -Wno-unknown-attributes -I. -o mkfs/mkfs mkfs/mkfs.c
@@ -126,7 +132,7 @@ clean:
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg
 	rm -f $(K)/*.o $(K)/kernel.elf fs.img mkfs/mkfs
 	rm -f $(K)/driver/*.o $(K)/lib/*.o $(K)/mm/*.o $(K)/sync/*.o
-	rm -f $(K)/proc/*.o $(K)/trap/*.o $(K)/fs/*.o $(K)/ipc/*.o
+	rm -f $(K)/proc/*.o $(K)/trap/*.o $(K)/fs/*.o $(K)/ipc/*.o $(K)/test/*.o
 
 # QEMU options
 QEMUOPTS = -machine virt -bios none -kernel $(K)/kernel.elf -m 128M -smp 1 -nographic

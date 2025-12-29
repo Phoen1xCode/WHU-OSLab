@@ -26,6 +26,6 @@ _entry:
         sb t1, 0(t2)
 
         # jump to start() in start.c
-        call start
+        call main
 spin:
         j spin

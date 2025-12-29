@@ -245,7 +245,7 @@ int devintr(void) {
 
     // 根据 IRQ 调用相应的处理程序
     if (irq == UART0_IRQ) {
-      uartintr();
+      // uartintr();
     } else if (irq == VIRTIO0_IRQ) {
       // virtio_disk_intr();
     } else if (irq) {
